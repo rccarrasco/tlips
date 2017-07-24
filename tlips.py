@@ -399,7 +399,7 @@ t = Tree.parse_tree('b')
 print(t, ' -> ', G.delta(t))
 assert(G.delta(t)==1)
 
-seed(1)
+#seed(1)
 sample = [G.gen() for n in range(1000)]
 
 """

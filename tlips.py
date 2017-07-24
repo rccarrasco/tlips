@@ -82,7 +82,6 @@ class Tree(object):
 # Test tree implementation
 s = 'aa(b(e(g xh(a) i) ex) cx(d))'
 t =  Tree.parse_tree(s)
-print('t=', t)
 assert(str(t)==s)
 
 # A transition rule is lhs -> rhs with an associated weight (probability)
@@ -136,7 +135,6 @@ class DTA(object):
         self.rights = {state:set() for state in self.states}
         self.lefts = {state:set() for state in self.states}
         self.total = Counter()
-        print('Q=', self.states)
         for rule in rules:
             self.lefts[rule.lhs()].add(rule)
             self.total[rule.lhs()] += rule.weight()
@@ -213,9 +211,9 @@ class Acceptor(object):
         self.rights = {0:set()}
         self.total = Counter()
         for tree in trees:
-            # add transitions
+            # add all transitions required to parse the tree
             root = self.add_tree(tree)
-            # add root-transition
+            # add a root-to-axiom transition
             self.add_final(root)
 
         # Auxiliary sets for the inference process
@@ -224,11 +222,11 @@ class Acceptor(object):
         self.merged = dict()
         self.kern_rules = set()
 
-    # Return number of states
+    # Return number of states in the acceptor
     def __len__(self):
         return len(self.states)
     
-    # add a new state
+    # Add a new state to the acceptor
     def add_state(self, state):
         if state not in self.states:
             self.states.add(state)
@@ -245,7 +243,7 @@ class Acceptor(object):
             rule = Rule(0, key, 1)
             self.add_rule(rule)
      
-    # Add a new rule to the aceptor                   
+    # Add a new transition rule to the aceptor                   
     def add_rule(self, rule):
         self.rules.append(rule)
         self.transitions[rule.rhs()] = rule
@@ -257,14 +255,14 @@ class Acceptor(object):
             self.add_state(state)
             self.rights[state].add(rule)
                 
-        
+    # Retuirn a string representation
     def __str__(self):
         rules = '\n'.join(str(r) + ':' + str(r.weight()) for r in self.rules)
         return 'S = ' + str(self.axiom) \
                 + '\nQ = ' + str(self.states) \
                 + '\nR=\n' + rules 
         
-    # Add all rules in a subtree
+    # Add all rules required to parse a subtree
     def add_tree(self, tree):
         key = ((tree.label),) + tuple(self.add_tree(s) for s in tree.subtrees())
         if key in self.transitions:
@@ -334,13 +332,11 @@ class Acceptor(object):
         
         return True
         
-        
+    # Return the first state in kern which is compatible with this state (None if none found)     
     def first_compatible_state_in_kern(self, state, gamma):
-        #print(state, self.kern)
         for kern_state in self.kern:
             #print(kern_state)
-            if kern_state > 0 and self.compatible(kern_state, state, gamma):
-                #print('HELLO', kern_state)
+            if kern_state > 0 and self.compatible(kern_state, state, gamma):               
                 return kern_state
                 
         return None
@@ -349,7 +345,6 @@ class Acceptor(object):
     def add_to_kern(self, state):
         self.kern.add(state)
         for rule in self.rights[state]:
-            #print('rule=', rule)
                if set(rule.args()) <= self.kern:
                    q = rule.lhs()
                    if q not in self.kern and q not in self.merged:
@@ -360,13 +355,11 @@ class Acceptor(object):
     # The key algorithm
     # alpha(float) = significance level
     def infer(self, alpha):
-        gamma = (0.5 * log(2 / alpha * len(self.rules)))
+        gamma = (0.5 * log(2 / alpha))
         self.kern = {0}
         self.frontier = deque(rule.lhs() for rule in self.rules if rule.arity() == 0)
         self.kern_rules = {rule for rule in self.rules if rule.arity() == 0}
-        print('F=', self.frontier)
         while len(self.frontier) > 0: 
-            #print('F =', self.frontier, 'K=', self.kern)
             state = self.frontier.popleft()
             kern_state = self.first_compatible_state_in_kern(state, gamma)
             if kern_state != None:

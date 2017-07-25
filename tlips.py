@@ -132,12 +132,12 @@ class DTA(object):
         
         # Auxiliary data structures for quick access
         self.transitions = {rule.rhs():rule for rule in rules}
-            self.total[rule.lhs()] += rule.weight()
         self.rights = {state:set() for state in self.states}
         self.lefts = {state:set() for state in self.states}
         self.total = Counter()
         for rule in rules:
             self.lefts[rule.lhs()].add(rule)
+            self.total[rule.lhs()] += rule.weight()
             for state in rule.args():
                 self.rights[state].add(rule)
 

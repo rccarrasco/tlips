@@ -132,12 +132,12 @@ class DTA(object):
         
         # Auxiliary data structures for quick access
         self.transitions = {rule.rhs():rule for rule in rules}
+            self.total[rule.lhs()] += rule.weight()
         self.rights = {state:set() for state in self.states}
         self.lefts = {state:set() for state in self.states}
         self.total = Counter()
         for rule in rules:
             self.lefts[rule.lhs()].add(rule)
-            self.total[rule.lhs()] += rule.weight()
             for state in rule.args():
                 self.rights[state].add(rule)
 
@@ -255,7 +255,7 @@ class Acceptor(object):
             self.add_state(state)
             self.rights[state].add(rule)
                 
-    # Retuirn a string representation
+    # Return a string representation
     def __str__(self):
         rules = '\n'.join(str(r) + ':' + str(r.weight()) for r in self.rules)
         return 'S = ' + str(self.axiom) \
@@ -304,12 +304,13 @@ class Acceptor(object):
                         kern_rule = self.transitions[key]
                         n1 = kern_rule.weight()
                     else:
+                        kern_rule = None
                         n1 = 0
                     if self.differ(n1, t1, n2, t2, gamma):
                         #print(kern_state, state, n1, t1, n2, t2)
                         return False
-                        if not self.compatible(kern_rule.lhs(), rule.lhs(), gamma):
-                            return False
+                    elif kern_rule and not self.compatible(kern_rule.lhs(), rule.lhs(), gamma):
+                        return False
         
         for kern_rule in self.rights[kern_state]:
             n1 = kern_rule.weight()
@@ -323,12 +324,13 @@ class Acceptor(object):
                         rule = self.transitions[key]
                         n2 = rule.weight()  
                     else:
+                        rule = None
                         n2 = 0
                     if self.differ(n1, t1, n2, t2, gamma):
                         #print(kern_state, state, n1, t1, n2, t2)
                         return False
-                        if not self.compatible(kern_rule.lhs(), rule.lhs(), gamma):
-                          return False    
+                    elif rule and not self.compatible(kern_rule.lhs(), rule.lhs(), gamma):
+                        return False    
         
         return True
         
